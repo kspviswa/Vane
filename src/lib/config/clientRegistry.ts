@@ -27,3 +27,6 @@ export const getMeasurementUnit = () => {
 
   return value.toLowerCase();
 };
+
+export const getEnableMemories = () =>
+  getClientConfig('enableMemories', 'true') === 'true';

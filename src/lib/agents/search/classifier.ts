@@ -2,6 +2,7 @@ import z from 'zod';
 import { ClassifierInput } from './types';
 import { classifierPrompt } from '@/lib/prompts/search/classifier';
 import formatChatHistoryAsString from '@/lib/utils/formatHistory';
+import memoryStore from '@/lib/memory/store';
 
 const schema = z.object({
   classification: z.object({
@@ -35,6 +36,29 @@ const schema = z.object({
 });
 
 export const classify = async (input: ClassifierInput) => {
+  let memoriesContext = '';
+  if (input.enableMemories !== false) {
+    try {
+      if (input.embedding) {
+        memoryStore.setEmbeddingModel(input.embedding);
+        const relevantMemories = await memoryStore.queryMemories(
+          input.query,
+          3,
+          0.45,
+        );
+        if (relevantMemories.length > 0) {
+          memoriesContext = relevantMemories
+            .map((m) => `- ${m.content}`)
+            .join('\n');
+        }
+      }
+    } catch {
+      // silently ignore memory errors in classifier
+    }
+  }
+
+  const userContent = `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>${memoriesContext ? `\n<user_memories>\n${memoriesContext}\n</user_memories>` : ''}`;
+
   const output = await input.llm.generateObject<typeof schema>({
     messages: [
       {
@@ -43,7 +67,7 @@ export const classify = async (input: ClassifierInput) => {
       },
       {
         role: 'user',
-        content: `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>`,
+        content: userContent,
       },
     ],
     schema,

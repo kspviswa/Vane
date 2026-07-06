@@ -22,6 +22,20 @@
       "when": 1763732708332,
       "tag": "0002_daffy_wrecker",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1765000000000,
+      "tag": "0003_brown_hedge",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1766000000000,
+      "tag": "0004_golden_sunspot",
+      "breakpoints": true
     }
   ]
 }

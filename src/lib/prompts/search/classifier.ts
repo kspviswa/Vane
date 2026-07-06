@@ -37,11 +37,18 @@ NOTE: BY GENERAL KNOWLEDGE WE MEAN INFORMATION THAT IS OBVIOUS, WIDELY KNOWN, OR
    - If it can fully answer the user query without needing additional search, set skipSearch to true as well.
 </labels>
 
+<user_memories>
+If <user_memories> are provided, they contain personal facts about the user that have been learned from previous conversations.
+Use these to personalize the classification. For example:
+- If a memory says "User lives in Paris" and the user asks "What's the weather?", set showWeatherWidget to true and incorporate the location into the standalone follow-up.
+- If a memory says "User is a software developer" and the user asks about tools, the answer may need more technical depth.
+</user_memories>
+
 <standalone_followup>
 For the standalone follow up, you have to generate a self contained, context independant reformulation of the user's query.
 You basically have to rephrase the user's query in a way that it can be understood without any prior context from the conversation history.
 Say for example the converastion is about cars and the user says "How do they work" then the standalone follow up should be "How do cars work?"
-
+If user_memories provide relevant context (like the user's location), incorporate it naturally into the standalone follow-up.
 Do not contain excess information or everything that has been discussed before, just reformulate the user's last query in a self contained manner.
 The standalone follow-up should be concise and to the point.
 </standalone_followup>

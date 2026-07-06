@@ -9,6 +9,7 @@ import db from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { chats } from '@/lib/db/schema';
 import UploadManager from '@/lib/uploads/manager';
+import '@/lib/memory/scheduler';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,7 @@ const bodySchema = z.object({
   chatModel: chatModelSchema,
   embeddingModel: embeddingModelSchema,
   systemInstructions: z.string().nullable().optional().default(''),
+  enableMemories: z.boolean().optional().default(true),
 });
 
 type Body = z.infer<typeof bodySchema>;
@@ -222,6 +224,7 @@ export const POST = async (req: Request) => {
         mode: body.optimizationMode,
         fileIds: body.files,
         systemInstructions: body.systemInstructions || 'None',
+        enableMemories: body.enableMemories,
       },
     });
 

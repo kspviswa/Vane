@@ -99,6 +99,16 @@ class ConfigManager {
           'e.g., "Respond in a friendly and concise tone" or "Use British English and format answers as bullet points."',
         scope: 'client',
       },
+      {
+        name: 'Enable Memories',
+        key: 'enableMemories',
+        type: 'switch',
+        required: false,
+        description:
+          'Automatically extract personal facts from conversations and use them to personalize answers.',
+        default: true,
+        scope: 'client',
+      },
     ],
     modelProviders: [],
     search: [

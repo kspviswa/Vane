@@ -9,6 +9,7 @@ import { messages } from '@/lib/db/schema';
 import { and, eq, gt } from 'drizzle-orm';
 import { TextBlock } from '@/lib/types';
 import { getTokenCount } from '@/lib/utils/splitText';
+import memoryStore from '@/lib/memory/store';
 
 class SearchAgent {
   async searchAsync(session: SessionManager, input: SearchAgentInput) {
@@ -57,6 +58,8 @@ class SearchAgent {
       enabledSources: input.config.sources,
       query: input.followUp,
       llm: input.config.llm,
+      embedding: input.config.embedding,
+      enableMemories: input.config.enableMemories,
     });
 
     const widgetPromise = WidgetExecutor.executeAll({
@@ -119,10 +122,31 @@ class SearchAgent {
 
     const finalContextWithWidgets = `<search_results note="These are the search results and assistant can cite these">\n${finalContext}\n</search_results>\n<widgets_result noteForAssistant="Its output is already showed to the user, assistant can use this information to answer the query but do not CITE this as a souce">\n${widgetContext}\n</widgets_result>`;
 
+    let memoriesContext: string | undefined;
+
+    if (input.config.enableMemories !== false) {
+      try {
+        memoryStore.setEmbeddingModel(input.config.embedding);
+        const relevantMemories = await memoryStore.queryMemories(
+          input.followUp,
+          5,
+          0.45,
+        );
+        if (relevantMemories.length > 0) {
+          memoriesContext = relevantMemories
+            .map((m) => `- ${m.content} (${m.category})`)
+            .join('\n');
+        }
+      } catch (err) {
+        console.error('Failed to query memories:', err);
+      }
+    }
+
     const writerPrompt = getWriterPrompt(
       finalContextWithWidgets,
       input.config.systemInstructions,
       input.config.mode,
+      memoriesContext,
     );
 
     const answerStream = input.config.llm.streamText({

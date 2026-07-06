@@ -31,6 +31,21 @@ export const projects = sqliteTable('projects', {
   updatedAt: text('updatedAt').notNull(),
 });
 
+export const memories = sqliteTable('memories', {
+  id: text('id').primaryKey(),
+  content: text('content').notNull(),
+  category: text('category', {
+    enum: ['personal_info', 'preference', 'fact', 'project', 'other'],
+  })
+    .notNull()
+    .default('other'),
+  embedding: text('embedding'),
+  sourceMessageId: text('sourceMessageId'),
+  sourceChatId: text('sourceChatId'),
+  createdAt: text('createdAt').notNull(),
+  updatedAt: text('updatedAt').notNull(),
+});
+
 export const chats = sqliteTable('chats', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),

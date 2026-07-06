@@ -13,6 +13,7 @@ export type SearchAgentConfig = {
   embedding: BaseEmbedding<any>;
   mode: 'speed' | 'balanced' | 'quality';
   systemInstructions: string;
+  enableMemories?: boolean;
 };
 
 export type SearchAgentInput = {
@@ -44,9 +45,11 @@ export type WidgetOutput = {
 
 export type ClassifierInput = {
   llm: BaseLLM<any>;
+  embedding?: BaseEmbedding<any>;
   enabledSources: SearchSources[];
   query: string;
   chatHistory: ChatTurnMessage[];
+  enableMemories?: boolean;
 };
 
 export type ClassifierOutput = {
