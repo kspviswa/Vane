@@ -19,8 +19,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'Vane - Direct your curiosity',
-  description: 'Vane is an AI powered answering engine.',
+  title: 'उत्तारम् - Direct your curiosity',
+  description: 'उत्तारम् is an AI powered answering engine.',
   manifest: '/manifest.webmanifest',
   icons: {
     apple: '/icon.png',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   other: {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
-    'apple-mobile-web-app-title': 'Vane',
+    'apple-mobile-web-app-title': 'उत्तारम्',
   },
 };
 

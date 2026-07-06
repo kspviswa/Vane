@@ -90,6 +90,24 @@ class ConfigManager {
     ],
     personalization: [
       {
+        name: 'Your Name',
+        key: 'userName',
+        type: 'string',
+        required: false,
+        description: 'Your name so उत्तारम् can greet you personally.',
+        placeholder: 'e.g., Alice',
+        scope: 'client',
+      },
+      {
+        name: 'Your Location',
+        key: 'location',
+        type: 'string',
+        required: false,
+        description: 'Your city or region for localized responses.',
+        placeholder: 'e.g., Chennai, India',
+        scope: 'client',
+      },
+      {
         name: 'System Instructions',
         key: 'systemInstructions',
         type: 'textarea',

@@ -11,6 +11,8 @@ import SettingsButtonMobile from '@/components/Settings/SettingsButtonMobile';
 import {
   getShowNewsWidget,
   getShowWeatherWidget,
+  getUserName,
+  getLocation,
 } from '@/lib/config/clientRegistry';
 
 const EmptyChat = () => {
@@ -20,6 +22,33 @@ const EmptyChat = () => {
   const [showNews, setShowNews] = useState(() =>
     typeof window !== 'undefined' ? getShowNewsWidget() : true,
   );
+
+  const greeting = (() => {
+    if (typeof window === 'undefined') return 'Research begins here.';
+    const name = getUserName();
+    const hour = new Date().getHours();
+    let timeGreeting = '';
+    if (hour < 12) timeGreeting = 'Good morning';
+    else if (hour < 17) timeGreeting = 'Good afternoon';
+    else timeGreeting = 'Good evening';
+    const greetingText = name
+      ? `${timeGreeting}, ${name}.`
+      : 'Research begins here.';
+    return greetingText;
+  })();
+
+  const subGreeting = (() => {
+    if (typeof window === 'undefined') return '';
+    const name = getUserName();
+    const loc = getLocation();
+    if (name && loc) {
+      return `Welcome back from ${loc}. What would you like to explore today?`;
+    }
+    if (name) {
+      return `What would you like to explore today?`;
+    }
+    return '';
+  })();
 
   useEffect(() => {
     const updateWidgetVisibility = () => {
@@ -47,10 +76,16 @@ const EmptyChat = () => {
         <SettingsButtonMobile />
       </div>
       <div className="flex flex-col items-center justify-center min-h-screen max-w-screen-sm mx-auto p-2 space-y-4">
-        <div className="flex flex-col items-center justify-center w-full space-y-8">
-          <h2 className="text-black/70 dark:text-white/70 text-3xl font-medium -mt-8">
-            Research begins here.
+        <div className="flex flex-col items-center justify-center w-full space-y-2">
+          <h2 className="text-black/70 dark:text-white/70 text-3xl font-medium text-center">
+            {greeting}
           </h2>
+          {subGreeting && (
+            <p className="text-black/50 dark:text-white/50 text-sm text-center max-w-md">
+              {subGreeting}
+            </p>
+          )}
+          <div className="h-4" />
           <EmptyChatMessageInput />
         </div>
         {(showWeather || showNews) && (

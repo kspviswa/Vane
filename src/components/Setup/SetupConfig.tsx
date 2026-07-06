@@ -4,7 +4,7 @@ import {
   UIConfigSections,
 } from '@/lib/config/types';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, User, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import AddProvider from '../Settings/Sections/Models/AddProviderDialog';
@@ -23,6 +23,8 @@ const SetupConfig = ({
   const [providers, setProviders] = useState<ConfigModelProvider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [location, setLocation] = useState('');
 
   useEffect(() => {
     const fetchProviders = async () => {
@@ -41,10 +43,16 @@ const SetupConfig = ({
       }
     };
 
-    if (setupState === 2) {
+    if (setupState === 3) {
       fetchProviders();
     }
   }, [setupState]);
+
+  const handleSavePersonal = () => {
+    if (userName) localStorage.setItem('userName', userName);
+    if (location) localStorage.setItem('location', location);
+    setSetupState(3);
+  };
 
   const handleFinish = async () => {
     try {
@@ -72,6 +80,65 @@ const SetupConfig = ({
   return (
     <div className="w-[95vw] md:w-[80vw] lg:w-[65vw] mx-auto px-2 sm:px-4 md:px-6 flex flex-col space-y-6">
       {setupState === 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.5, delay: 0.1 },
+          }}
+          className="w-full h-[calc(95vh-80px)] bg-light-primary dark:bg-dark-primary border border-light-200 dark:border-dark-200 rounded-xl shadow-sm flex flex-col overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 py-4 md:py-6">
+            <div className="flex flex-row items-center gap-3 mb-4 md:mb-6 pb-3 md:pb-4 border-b border-light-200 dark:border-dark-200">
+              <User className="w-5 h-5 text-[#24A0ED]" />
+              <div>
+                <p className="text-xs sm:text-sm font-medium text-black dark:text-white">
+                  About You
+                </p>
+                <p className="text-[10px] sm:text-xs text-black/50 dark:text-white/50 mt-0.5">
+                  Tell us a bit about yourself for a personalised experience
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4 max-w-md mx-auto mt-8">
+              <div>
+                <label className="block text-xs font-medium text-black/70 dark:text-white/70 mb-1.5">
+                  Your Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="e.g., Alice"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#24A0ED] transition-all duration-200"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-black/70 dark:text-white/70 mb-1.5">
+                  Your Location
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g., Chennai, India"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-[#24A0ED] transition-all duration-200"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {setupState === 3 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{
@@ -132,7 +199,7 @@ const SetupConfig = ({
         </motion.div>
       )}
 
-      {setupState === 3 && (
+      {setupState === 4 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{
@@ -172,8 +239,23 @@ const SetupConfig = ({
               x: 0,
               transition: { duration: 0.5 },
             }}
+            onClick={handleSavePersonal}
+            className="flex flex-row items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg bg-[#24A0ED] text-white hover:bg-[#1e8fd1] active:scale-95 transition-all duration-200 font-medium text-xs sm:text-sm"
+          >
+            <span>Next</span>
+            <ArrowRight className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+          </motion.button>
+        )}
+        {setupState === 3 && (
+          <motion.button
+            initial={{ opacity: 0, x: 10 }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              transition: { duration: 0.5 },
+            }}
             onClick={() => {
-              setSetupState(3);
+              setSetupState(4);
             }}
             disabled={!hasProviders || isLoading}
             className="flex flex-row items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg bg-[#24A0ED] text-white hover:bg-[#1e8fd1] active:scale-95 transition-all duration-200 font-medium text-xs sm:text-sm disabled:bg-light-200 dark:disabled:bg-dark-200 disabled:text-black/40 dark:disabled:text-white/40 disabled:cursor-not-allowed disabled:active:scale-100"
@@ -182,7 +264,7 @@ const SetupConfig = ({
             <ArrowRight className="w-4 h-4 md:w-[18px] md:h-[18px]" />
           </motion.button>
         )}
-        {setupState === 3 && (
+        {setupState === 4 && (
           <motion.button
             initial={{ opacity: 0, x: 10 }}
             animate={{

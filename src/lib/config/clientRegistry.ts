@@ -30,3 +30,7 @@ export const getMeasurementUnit = () => {
 
 export const getEnableMemories = () =>
   getClientConfig('enableMemories', 'true') === 'true';
+
+export const getUserName = () => getClientConfig('userName', '');
+
+export const getLocation = () => getClientConfig('location', '');
