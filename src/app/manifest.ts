@@ -9,6 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#0a0a0a',
     theme_color: '#0a0a0a',
+    prefer_related_applications: false,
     screenshots: [
       {
         src: '/screenshots/p1.png',
@@ -47,6 +48,12 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: '440x440',
         type: 'image/png',
         purpose: 'any',
+      },
+      {
+        src: '/icon.png',
+        sizes: '180x180',
+        type: 'image/png',
+        purpose: 'apple touch icon',
       },
     ],
   };

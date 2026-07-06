@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Montserrat } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,24 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'Vane - Direct your curiosity',
   description: 'Vane is an AI powered answering engine.',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    apple: '/icon.png',
+  },
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'Vane',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#0a0a0a',
 };
 
 export default function RootLayout({
