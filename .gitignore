@@ -34,7 +34,7 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Db
-db.sqlite
+# Data
+data/
 
 certificates
