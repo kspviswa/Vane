@@ -99,13 +99,37 @@ export type UploadSearchResultsResearchBlock = {
   results: Chunk[];
 };
 
+export type TimeoutResearchBlock = {
+  id: string;
+  type: 'timeout';
+  message: string;
+  attempt: number;
+  maxRetries: number;
+};
+
+export type RetryingResearchBlock = {
+  id: string;
+  type: 'retrying';
+  attempt: number;
+  maxRetries: number;
+};
+
+export type GaveUpResearchBlock = {
+  id: string;
+  type: 'gave_up';
+  message: string;
+};
+
 export type ResearchBlockSubStep =
   | ReasoningResearchBlock
   | SearchingResearchBlock
   | SearchResultsResearchBlock
   | ReadingResearchBlock
   | UploadSearchingResearchBlock
-  | UploadSearchResultsResearchBlock;
+  | UploadSearchResultsResearchBlock
+  | TimeoutResearchBlock
+  | RetryingResearchBlock
+  | GaveUpResearchBlock;
 
 export type ResearchBlock = {
   id: string;

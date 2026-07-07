@@ -7,9 +7,11 @@ import { WidgetExecutor } from './widgets';
 import db from '@/lib/db';
 import { messages } from '@/lib/db/schema';
 import { and, eq, gt } from 'drizzle-orm';
-import { TextBlock } from '@/lib/types';
+import { TextBlock, ResearchBlock } from '@/lib/types';
 import { getTokenCount } from '@/lib/utils/splitText';
 import memoryStore from '@/lib/memory/store';
+import { withRetryStream } from '@/lib/utils/withRetry';
+import { createRetryStatusHandler } from '@/lib/utils/emitRetryStatus';
 
 class SearchAgent {
   async searchAsync(session: SessionManager, input: SearchAgentInput) {
@@ -53,6 +55,14 @@ class SearchAgent {
         .execute();
     }
 
+    const researchBlock: ResearchBlock = {
+      id: crypto.randomUUID(),
+      type: 'research',
+      data: { subSteps: [] },
+    };
+    session.emitBlock(researchBlock);
+    const retryHandler = createRetryStatusHandler(session, researchBlock.id);
+
     let classification;
     try {
       classification = await classify({
@@ -85,6 +95,7 @@ class SearchAgent {
       chatHistory: input.chatHistory,
       followUp: input.followUp,
       llm: input.config.llm,
+      userProfile: input.config.userProfile,
     }).then((widgetOutputs) => {
       widgetOutputs.forEach((o) => {
         session.emitBlock({
@@ -109,6 +120,7 @@ class SearchAgent {
           followUp: input.followUp,
           classification: classification,
           config: input.config,
+          researchBlockId: researchBlock.id,
         })
         .catch((err) => {
           console.error('Researcher failed:', err);
@@ -124,6 +136,8 @@ class SearchAgent {
     session.emit('data', {
       type: 'researchComplete',
     });
+
+    const answerRetryHandler = createRetryStatusHandler(session, researchBlock.id);
 
     let finalContext =
       '<Query to be answered without searching; Search not made>';
@@ -183,19 +197,27 @@ class SearchAgent {
       userProfileContext,
     );
 
-    const answerStream = input.config.llm.streamText({
-      messages: [
-        {
-          role: 'system',
-          content: writerPrompt,
-        },
-        ...input.chatHistory,
-        {
-          role: 'user',
-          content: input.followUp,
-        },
-      ],
-    });
+    const answerStream = await withRetryStream(
+      (signal) =>
+        input.config.llm.streamText({
+          messages: [
+            {
+              role: 'system',
+              content: writerPrompt,
+            },
+            ...input.chatHistory,
+            {
+              role: 'user',
+              content: input.followUp,
+            },
+          ],
+        }),
+      {
+        timeout: 60000,
+        maxRetries: 3,
+        onStatus: answerRetryHandler,
+      },
+    );
 
     let responseBlockId = '';
 

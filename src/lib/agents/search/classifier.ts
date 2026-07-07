@@ -3,6 +3,7 @@ import { ClassifierInput } from './types';
 import { classifierPrompt } from '@/lib/prompts/search/classifier';
 import formatChatHistoryAsString from '@/lib/utils/formatHistory';
 import memoryStore from '@/lib/memory/store';
+import { withRetry } from '@/lib/utils/withRetry';
 
 const schema = z.object({
   classification: z.object({
@@ -70,19 +71,26 @@ export const classify = async (input: ClassifierInput) => {
 
   const userContent = `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>${memoriesContext ? `\n<user_memories>\n${memoriesContext}\n</user_memories>` : ''}${userProfileString}`;
 
-  const output = await input.llm.generateObject<typeof schema>({
-    messages: [
-      {
-        role: 'system',
-        content: classifierPrompt,
-      },
-      {
-        role: 'user',
-        content: userContent,
-      },
-    ],
-    schema,
-  });
+  const output = await withRetry(
+    async () =>
+      input.llm.generateObject<typeof schema>({
+        messages: [
+          {
+            role: 'system',
+            content: classifierPrompt,
+          },
+          {
+            role: 'user',
+            content: userContent,
+          },
+        ],
+        schema,
+      }),
+    {
+      timeout: 30000,
+      maxRetries: 3,
+    },
+  );
 
   return output;
 };

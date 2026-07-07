@@ -77,8 +77,8 @@ const EmptyChat = () => {
       </div>
       <div className="flex flex-col items-center justify-center min-h-screen max-w-screen-sm mx-auto p-2 space-y-4">
         <div className="flex flex-col items-center justify-center w-full space-y-2">
-          <h1 className="text-black dark:text-white text-4xl font-light tracking-tight mb-2">
-            <span className="font-['Noto_Sans_Devanagari',sans-serif]">ऊ</span>ttaram
+          <h1 className="text-black dark:text-white text-6xl font-light tracking-tight mb-4">
+            <span style={{ fontFamily: "'Noto Sans Devanagari','Nirmala UI',sans-serif" }}>ऊ</span>ttaram
           </h1>
           <h2 className="text-black/70 dark:text-white/70 text-3xl font-medium text-center">
             {greeting}

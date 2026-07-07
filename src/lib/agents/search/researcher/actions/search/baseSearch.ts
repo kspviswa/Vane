@@ -8,6 +8,7 @@ import computeSimilarity from '@/lib/utils/computeSimilarity';
 import z from 'zod';
 import Scraper from '@/lib/scraper';
 import { splitText } from '@/lib/utils/splitText';
+import { createRetryStatusHandler } from '@/lib/utils/emitRetryStatus';
 
 export const executeSearch = async (input: {
   queries: string[];
@@ -40,9 +41,12 @@ export const executeSearch = async (input: {
 
     const results: Chunk[] = [];
 
+    const retryHandler = createRetryStatusHandler(input.session, input.researchBlock.id);
+
     const search = async (q: string) => {
       const res = await searchSearxng(q, {
         ...(input.searchConfig ? input.searchConfig : {}),
+        onRetryStatus: retryHandler,
       });
 
       let resultChunks: Chunk[] = [];
@@ -175,9 +179,12 @@ export const executeSearch = async (input: {
 
     const searchResults: Chunk[] = [];
 
+    const retryHandler = createRetryStatusHandler(input.session, input.researchBlock.id);
+
     const search = async (q: string) => {
       const res = await searchSearxng(q, {
         ...(input.searchConfig ? input.searchConfig : {}),
+        onRetryStatus: retryHandler,
       });
 
       let resultChunks: Chunk[] = [];

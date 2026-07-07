@@ -7,6 +7,9 @@ import {
   ChevronDown,
   ChevronUp,
   BookSearch,
+  Timer,
+  RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -25,6 +28,12 @@ const getStepIcon = (step: ResearchBlockSubStep) => {
     return <FileText className="w-4 h-4" />;
   } else if (step.type === 'reading') {
     return <BookSearch className="w-4 h-4" />;
+  } else if (step.type === 'timeout') {
+    return <Timer className="w-4 h-4 text-amber-500" />;
+  } else if (step.type === 'retrying') {
+    return <RefreshCw className="w-4 h-4 text-amber-500" />;
+  } else if (step.type === 'gave_up') {
+    return <AlertTriangle className="w-4 h-4 text-red-500" />;
   }
 
   return null;
@@ -47,6 +56,12 @@ const getStepTitle = (
     return 'Scanning your uploaded documents';
   } else if (step.type === 'upload_search_results') {
     return `Reading ${step.results.length} ${step.results.length === 1 ? 'document' : 'documents'}`;
+  } else if (step.type === 'timeout') {
+    return `Timed out (attempt ${step.attempt}/${step.maxRetries})`;
+  } else if (step.type === 'retrying') {
+    return `Retrying (attempt ${step.attempt}/${step.maxRetries})`;
+  } else if (step.type === 'gave_up') {
+    return 'Gave up';
   }
 
   return 'Processing';
@@ -253,6 +268,24 @@ const AssistantSteps = ({
                             })}
                           </div>
                         )}
+
+                      {step.type === 'timeout' && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                          {step.message}
+                        </p>
+                      )}
+
+                      {step.type === 'retrying' && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                          Attempt {step.attempt}/{step.maxRetries} failed, retrying...
+                        </p>
+                      )}
+
+                      {step.type === 'gave_up' && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                          {step.message}
+                        </p>
+                      )}
                     </div>
                   </motion.div>
                 );

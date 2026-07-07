@@ -1,10 +1,13 @@
 import { getSearxngURL } from './config/serverRegistry';
+import { withRetry } from './utils/withRetry';
+import { RetryStatus } from './utils/withRetry';
 
 export interface SearxngSearchOptions {
   categories?: string[];
   engines?: string[];
   language?: string;
   pageno?: number;
+  onRetryStatus?: (status: RetryStatus) => void;
 }
 
 interface SearxngSearchResult {
@@ -38,30 +41,28 @@ export const searchSearxng = async (
     });
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const { onRetryStatus, ...searchOpts } = opts || {};
 
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-    });
+  const performSearch = async (signal: AbortSignal) => {
+    const res = await fetch(url, { signal });
 
     if (!res.ok) {
       throw new Error(`SearXNG error: ${res.statusText}`);
     }
 
     const data = await res.json();
-
     const results: SearxngSearchResult[] = data.results;
     const suggestions: string[] = data.suggestions;
 
     return { results, suggestions };
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      throw new Error('SearXNG search timed out');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  };
+
+  return withRetry<{ results: SearxngSearchResult[]; suggestions: string[] }>(
+    performSearch,
+    {
+      timeout: 10000,
+      maxRetries: 3,
+      onStatus: onRetryStatus,
+    },
+  );
 };

@@ -5,6 +5,8 @@ import SessionManager from '@/lib/session';
 import { Message, ReasoningResearchBlock } from '@/lib/types';
 import formatChatHistoryAsString from '@/lib/utils/formatHistory';
 import { ToolCall } from '@/lib/models/types';
+import { withRetryStream } from '@/lib/utils/withRetry';
+import { createRetryStatusHandler } from '@/lib/utils/emitRetryStatus';
 
 class Researcher {
   async research(
@@ -34,15 +36,19 @@ class Researcher {
         sources: input.config.sources,
       });
 
-    const researchBlockId = crypto.randomUUID();
+    const researchBlockId = input.researchBlockId || crypto.randomUUID();
 
-    session.emitBlock({
-      id: researchBlockId,
-      type: 'research',
-      data: {
-        subSteps: [],
-      },
-    });
+    if (!input.researchBlockId) {
+      session.emitBlock({
+        id: researchBlockId,
+        type: 'research',
+        data: {
+          subSteps: [],
+        },
+      });
+    }
+
+    const retryHandler = createRetryStatusHandler(session, researchBlockId);
 
     const agentMessageHistory: Message[] = [
       {
@@ -65,16 +71,24 @@ class Researcher {
         input.config.fileIds,
       );
 
-      const actionStream = input.config.llm.streamText({
-        messages: [
-          {
-            role: 'system',
-            content: researcherPrompt,
-          },
-          ...agentMessageHistory,
-        ],
-        tools: availableTools,
-      });
+      const actionStream = await withRetryStream(
+        (signal) =>
+          input.config.llm.streamText({
+            messages: [
+              {
+                role: 'system',
+                content: researcherPrompt,
+              },
+              ...agentMessageHistory,
+            ],
+            tools: availableTools,
+          }),
+        {
+          timeout: 30000,
+          maxRetries: 3,
+          onStatus: retryHandler,
+        },
+      );
 
       const block = session.getBlock(researchBlockId);
 

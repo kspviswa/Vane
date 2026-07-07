@@ -2,6 +2,7 @@ import z from 'zod';
 import { Widget } from '../types';
 import formatChatHistoryAsString from '@/lib/utils/formatHistory';
 import { exp, evaluate as mathEval } from 'mathjs';
+import { withRetry } from '@/lib/utils/withRetry';
 
 const schema = z.object({
   expression: z
@@ -37,19 +38,23 @@ const calculationWidget: Widget = {
   shouldExecute: (classification) =>
     classification.classification.showCalculationWidget,
   execute: async (input) => {
-    const output = await input.llm.generateObject<typeof schema>({
-      messages: [
-        {
-          role: 'system',
-          content: system,
-        },
-        {
-          role: 'user',
-          content: `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_follow_up>\n${input.followUp}\n</user_follow_up>`,
-        },
-      ],
-      schema,
-    });
+    const output = await withRetry(
+      async () =>
+        input.llm.generateObject<typeof schema>({
+          messages: [
+            {
+              role: 'system',
+              content: system,
+            },
+            {
+              role: 'user',
+              content: `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_follow_up>\n${input.followUp}\n</user_follow_up>`,
+            },
+          ],
+          schema,
+        }),
+      { timeout: 15000, maxRetries: 3 },
+    );
 
     if (output.notPresent) {
       return;

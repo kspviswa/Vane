@@ -36,6 +36,7 @@ export type WidgetInput = {
   followUp: string;
   classification: ClassifierOutput;
   llm: BaseLLM<any>;
+  userProfile?: UserProfile;
 };
 
 export type Widget = {
@@ -84,6 +85,7 @@ export type ResearcherInput = {
   followUp: string;
   classification: ClassifierOutput;
   config: SearchAgentConfig;
+  researchBlockId?: string;
 };
 
 export type ResearcherOutput = {

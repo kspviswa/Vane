@@ -2,6 +2,7 @@ import z from 'zod';
 import { Widget } from '../types';
 import YahooFinance from 'yahoo-finance2';
 import formatChatHistoryAsString from '@/lib/utils/formatHistory';
+import { withRetry } from '@/lib/utils/withRetry';
 
 const yf = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
@@ -53,19 +54,23 @@ const stockWidget: Widget = {
   shouldExecute: (classification) =>
     classification.classification.showStockWidget,
   execute: async (input) => {
-    const output = await input.llm.generateObject<typeof schema>({
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_follow_up>\n${input.followUp}\n</user_follow_up>`,
-        },
-      ],
-      schema,
-    });
+    const output = await withRetry(
+      async () =>
+        input.llm.generateObject<typeof schema>({
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_follow_up>\n${input.followUp}\n</user_follow_up>`,
+            },
+          ],
+          schema,
+        }),
+      { timeout: 15000, maxRetries: 3 },
+    );
 
     if (output.notPresent) {
       return;
