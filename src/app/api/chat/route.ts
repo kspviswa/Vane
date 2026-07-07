@@ -47,6 +47,14 @@ const bodySchema = z.object({
   chatModel: chatModelSchema,
   embeddingModel: embeddingModelSchema,
   systemInstructions: z.string().nullable().optional().default(''),
+  userProfile: z
+    .object({
+      name: z.string().optional().default(''),
+      location: z.string().optional().default(''),
+      aboutMe: z.string().optional().default(''),
+    })
+    .optional()
+    .default({ name: '', location: '', aboutMe: '' }),
   enableMemories: z.boolean().optional().default(true),
 });
 
@@ -236,6 +244,7 @@ export const POST = async (req: Request) => {
         mode: body.optimizationMode,
         fileIds: body.files,
         systemInstructions: body.systemInstructions || 'None',
+        userProfile: body.userProfile || { name: '', location: '', aboutMe: '' },
         enableMemories: body.enableMemories,
       },
     });

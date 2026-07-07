@@ -57,7 +57,18 @@ export const classify = async (input: ClassifierInput) => {
     }
   }
 
-  const userContent = `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>${memoriesContext ? `\n<user_memories>\n${memoriesContext}\n</user_memories>` : ''}`;
+  const userProfileString = (() => {
+    if (!input.userProfile) return '';
+    const parts: string[] = [];
+    if (input.userProfile.name) parts.push(`Name: ${input.userProfile.name}`);
+    if (input.userProfile.location)
+      parts.push(`Location: ${input.userProfile.location}`);
+    if (input.userProfile.aboutMe)
+      parts.push(`About: ${input.userProfile.aboutMe}`);
+    return parts.length > 0 ? `\n<user_profile>\n${parts.join('\n')}\n</user_profile>` : '';
+  })();
+
+  const userContent = `<conversation_history>\n${formatChatHistoryAsString(input.chatHistory)}\n</conversation_history>\n<user_query>\n${input.query}\n</user_query>${memoriesContext ? `\n<user_memories>\n${memoriesContext}\n</user_memories>` : ''}${userProfileString}`;
 
   const output = await input.llm.generateObject<typeof schema>({
     messages: [

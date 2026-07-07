@@ -34,3 +34,5 @@ export const getEnableMemories = () =>
 export const getUserName = () => getClientConfig('userName', '');
 
 export const getLocation = () => getClientConfig('location', '');
+
+export const getAboutMe = () => getClientConfig('aboutMe', '');

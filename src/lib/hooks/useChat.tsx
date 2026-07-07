@@ -782,6 +782,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
           providerId: embeddingModelProvider.providerId,
         },
         systemInstructions: localStorage.getItem('systemInstructions'),
+        userProfile: {
+          name: localStorage.getItem('userName') || '',
+          location: localStorage.getItem('location') || '',
+          aboutMe: localStorage.getItem('aboutMe') || '',
+        },
         enableMemories:
           localStorage.getItem('enableMemories') !== 'false',
       }),

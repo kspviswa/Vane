@@ -44,11 +44,15 @@ Use these to personalize the classification. For example:
 - If a memory says "User is a software developer" and the user asks about tools, the answer may need more technical depth.
 </user_memories>
 
+<user_profile>
+If <user_profile> is provided, it contains the user's self-reported profile (name, location, and background).
+Use it to personalize the classification and standalone follow-up wherever relevant.
+</user_profile>
+
 <standalone_followup>
 For the standalone follow up, you have to generate a self contained, context independant reformulation of the user's query.
 You basically have to rephrase the user's query in a way that it can be understood without any prior context from the conversation history.
-Say for example the converastion is about cars and the user says "How do they work" then the standalone follow up should be "How do cars work?"
-If user_memories provide relevant context (like the user's location), incorporate it naturally into the standalone follow-up.
+If user_memories or user_profile provide relevant context (like location, preferences, or background), naturally incorporate that into the standalone follow-up.
 Do not contain excess information or everything that has been discussed before, just reformulate the user's last query in a self contained manner.
 The standalone follow-up should be concise and to the point.
 </standalone_followup>

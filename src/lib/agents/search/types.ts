@@ -6,6 +6,12 @@ import { ChatTurnMessage, Chunk } from '@/lib/types';
 
 export type SearchSources = 'web' | 'discussions' | 'academic';
 
+export type UserProfile = {
+  name: string;
+  location: string;
+  aboutMe: string;
+};
+
 export type SearchAgentConfig = {
   sources: SearchSources[];
   fileIds: string[];
@@ -13,6 +19,7 @@ export type SearchAgentConfig = {
   embedding: BaseEmbedding<any>;
   mode: 'speed' | 'balanced' | 'quality';
   systemInstructions: string;
+  userProfile?: UserProfile;
   enableMemories?: boolean;
 };
 
@@ -50,6 +57,7 @@ export type ClassifierInput = {
   query: string;
   chatHistory: ChatTurnMessage[];
   enableMemories?: boolean;
+  userProfile?: UserProfile;
 };
 
 export type ClassifierOutput = {

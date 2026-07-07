@@ -62,6 +62,7 @@ class SearchAgent {
         llm: input.config.llm,
         embedding: input.config.embedding,
         enableMemories: input.config.enableMemories,
+        userProfile: input.config.userProfile,
       });
     } catch (err) {
       console.error('Classifier failed, using defaults:', err);
@@ -164,11 +165,22 @@ class SearchAgent {
       }
     }
 
+    const userProfileContext = input.config.userProfile
+      ? (() => {
+          const parts: string[] = [];
+          if (input.config.userProfile.name) parts.push(`Name: ${input.config.userProfile.name}`);
+          if (input.config.userProfile.location) parts.push(`Location: ${input.config.userProfile.location}`);
+          if (input.config.userProfile.aboutMe) parts.push(`About: ${input.config.userProfile.aboutMe}`);
+          return parts.join('\n');
+        })()
+      : '';
+
     const writerPrompt = getWriterPrompt(
       finalContextWithWidgets,
       input.config.systemInstructions,
       input.config.mode,
       memoriesContext,
+      userProfileContext,
     );
 
     const answerStream = input.config.llm.streamText({

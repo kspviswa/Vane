@@ -14,6 +14,7 @@ class APISearchAgent {
         enabledSources: input.config.sources,
         query: input.followUp,
         llm: input.config.llm,
+        userProfile: input.config.userProfile,
       });
     } catch (err) {
       console.error('Classifier failed, using defaults:', err);
@@ -85,10 +86,22 @@ class APISearchAgent {
 
     const finalContextWithWidgets = `<search_results note="These are the search results and assistant can cite these">\n${finalContext}\n</search_results>\n<widgets_result noteForAssistant="Its output is already showed to the user, assistant can use this information to answer the query but do not CITE this as a souce">\n${widgetContext}\n</widgets_result>`;
 
+    const userProfileContext = input.config.userProfile
+      ? (() => {
+          const parts: string[] = [];
+          if (input.config.userProfile.name) parts.push(`Name: ${input.config.userProfile.name}`);
+          if (input.config.userProfile.location) parts.push(`Location: ${input.config.userProfile.location}`);
+          if (input.config.userProfile.aboutMe) parts.push(`About: ${input.config.userProfile.aboutMe}`);
+          return parts.join('\n');
+        })()
+      : '';
+
     const writerPrompt = getWriterPrompt(
       finalContextWithWidgets,
       input.config.systemInstructions,
       input.config.mode,
+      undefined,
+      userProfileContext,
     );
 
     const answerStream = input.config.llm.streamText({

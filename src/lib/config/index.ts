@@ -118,6 +118,17 @@ class ConfigManager {
         scope: 'client',
       },
       {
+        name: 'About Me',
+        key: 'aboutMe',
+        type: 'textarea',
+        required: false,
+        description:
+          'Describe your background, profession, and interests so उत्तारम् can tailor responses to your level of expertise. Similar to custom instructions in other AI tools.',
+        placeholder:
+          'e.g., I am a software architect with 10 years of experience in distributed systems...',
+        scope: 'client',
+      },
+      {
         name: 'Enable Memories',
         key: 'enableMemories',
         type: 'switch',

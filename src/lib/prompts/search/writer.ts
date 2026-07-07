@@ -3,6 +3,7 @@ export const getWriterPrompt = (
   systemInstructions: string,
   mode: 'speed' | 'balanced' | 'quality',
   memoriesContext?: string,
+  userProfileContext?: string,
 ) => {
   return `
 You are Vane, an AI model skilled in web search and crafting detailed, engaging, and well-structured answers. You excel at summarizing web pages and extracting relevant information to create professional, blog-style responses.
@@ -51,6 +52,16 @@ ${memoriesContext ? `\n    ### Personal Context (Memories)
     - If the query relates to a past preference or personal fact, incorporate it
     - Do not fabricate or assume information beyond what is provided
     - If memories are not relevant to the query, ignore them\n` : ''}
+${userProfileContext ? `\n    ### User Profile
+    The following information about the user has been provided by them directly.
+    Use it to personalize your response naturally — match the depth, tone, and content to who the user is.
+    
+    <user_profile>
+    ${userProfileContext}
+    </user_profile>
+    
+    - Use the profile as general context about your audience; let it shape how you write without being explicit about it.
+    - Do not fabricate or assume information beyond what is provided.\n` : ''}
 
     ### Example Output
     - Begin with a brief introduction summarizing the event or query topic.
