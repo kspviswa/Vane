@@ -409,10 +409,12 @@ export const executeSearch = async (input: {
             }),
           );
 
-          extractedFacts.push({
-            ...result,
-            content: accumulatedContent,
-          });
+          if (accumulatedContent.trim().length > 0) {
+            extractedFacts.push({
+              ...result,
+              content: accumulatedContent,
+            });
+          }
         } catch (err) {
           console.log(
             'Error scraping or extracting information from',
@@ -422,6 +424,16 @@ export const executeSearch = async (input: {
         }
       }),
     );
+
+    if (extractedFacts.length === 0) {
+      console.log(
+        'Quality mode: no extracted facts, falling back to raw search results',
+      );
+      if (filteredResults.length > 0) {
+        return filteredResults;
+      }
+      return searchResults.slice(0, 20);
+    }
 
     return extractedFacts;
   } else {
