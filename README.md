@@ -1,8 +1,8 @@
-# उत्तारम् — Direct Your Curiosity
+# ऊttaram — Direct Your Curiosity
 
-उत्तारम् is a **privacy-focused AI answering engine** forked from [Vane](https://github.com/ItzCrazyKns/Vane). It runs on your own hardware, combines web knowledge with local and cloud LLMs (Ollama, OpenAI, Anthropic, Gemini, Groq, and more), and delivers cited answers — all while keeping your data private.
+ऊttaram is a **privacy-focused AI answering engine** forked from [Vane](https://github.com/ItzCrazyKns/Vane). It runs on your own hardware, combines web knowledge with local and cloud LLMs (Ollama, OpenAI, Anthropic, Gemini, Groq, and more), and delivers cited answers — all while keeping your data private.
 
-## What Makes उत्तारम् Different?
+## What Makes ऊttaram Different?
 
 This fork introduces several features not found in the upstream Vane project:
 
@@ -100,7 +100,7 @@ http://localhost:7777/?q=%s
 
 ## Why Fork?
 
-उत्तारम् started as a fork to address specific needs:
+ऊttaram started as a fork to address specific needs:
 
 - **Persistent personalization** — The memories feature lets the LLM learn from past conversations, something the upstream didn't have.
 - **Better organization** — Projects let you group related chats together.
