@@ -18,7 +18,7 @@ import {
   ChatCompletionTool,
   ChatCompletionToolMessageParam,
 } from 'openai/resources/index.mjs';
-import { Message } from '@/lib/types';
+import { ContentPart, Message } from '@/lib/types';
 import { repairJson } from '@toolsycc/json-repair';
 
 type OpenAIConfig = {
@@ -64,6 +64,17 @@ class OpenAILLM extends BaseLLM<OpenAIConfig> {
               })),
             }),
         } as ChatCompletionAssistantMessageParam;
+      }
+
+      if (msg.role === 'user' && msg.images && msg.images.length > 0) {
+        const parts: ContentPart[] = [
+          { type: 'text', text: msg.content },
+          ...msg.images.map((url) => ({
+            type: 'image_url' as const,
+            image_url: { url },
+          })),
+        ];
+        return { role: 'user', content: parts } as ChatCompletionMessageParam;
       }
 
       return msg;

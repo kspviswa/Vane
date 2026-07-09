@@ -32,6 +32,12 @@ const Models = ({
         />
         <ModelSelect
           providers={values.filter((p) =>
+            p.chatModels.some((m) => m.key != 'error'),
+          )}
+          type="vision"
+        />
+        <ModelSelect
+          providers={values.filter((p) =>
             p.embeddingModels.some((m) => m.key != 'error'),
           )}
           type="embedding"

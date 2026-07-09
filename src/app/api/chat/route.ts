@@ -10,6 +10,17 @@ import { eq } from 'drizzle-orm';
 import { chats } from '@/lib/db/schema';
 import UploadManager from '@/lib/uploads/manager';
 import { extractMemories } from '@/lib/memory/extractor';
+import { analyzeImagesWithVLM } from '@/lib/vision/analyze';
+import path from 'path';
+
+const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+
+function isImageFile(fileId: string): boolean {
+  const file = UploadManager.getFile(fileId);
+  if (!file) return false;
+  const ext = path.extname(file.filePath).toLowerCase();
+  return IMAGE_EXTS.has(ext);
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,6 +43,15 @@ const embeddingModelSchema: z.ZodType<ModelWithProvider> = z.object({
   key: z.string({ message: 'Embedding model key must be provided' }),
 });
 
+const visionModelSchema: z.ZodType<ModelWithProvider | null> = z
+  .object({
+    providerId: z.string(),
+    key: z.string(),
+  })
+  .nullable()
+  .optional()
+  .default(null);
+
 const bodySchema = z.object({
   message: messageSchema,
   optimizationMode: z.enum(['speed', 'balanced', 'quality'], {
@@ -46,6 +66,7 @@ const bodySchema = z.object({
   projectId: z.string().nullable().optional().default(null),
   chatModel: chatModelSchema,
   embeddingModel: embeddingModelSchema,
+  visionModel: visionModelSchema,
   systemInstructions: z.string().nullable().optional().default(''),
   userProfile: z
     .object({
@@ -174,6 +195,32 @@ export const POST = async (req: Request) => {
       }
     });
 
+    let followUpContent = message.content;
+
+    const imageFileIds = body.files.filter((fid) => isImageFile(fid));
+
+    if (imageFileIds.length > 0) {
+      try {
+        const visionModelInfo = body.visionModel;
+        let vllm;
+        if (visionModelInfo && visionModelInfo.providerId && visionModelInfo.key) {
+          vllm = await registry.loadChatModel(visionModelInfo.providerId, visionModelInfo.key);
+        } else {
+          vllm = llm;
+        }
+        const vlmAnalysis = await analyzeImagesWithVLM(
+          vllm,
+          imageFileIds,
+          message.content,
+        );
+        if (vlmAnalysis) {
+          followUpContent = `[Image Analysis from VLM]\n${vlmAnalysis}\n\nUser's original question: ${message.content}`;
+        }
+      } catch (err) {
+        console.error('VLM analysis failed, continuing without it:', err);
+      }
+    }
+
     const agent = new SearchAgent();
     const session = SessionManager.createSession();
 
@@ -252,7 +299,7 @@ export const POST = async (req: Request) => {
 
     agent.searchAsync(session, {
       chatHistory: history,
-      followUp: message.content,
+      followUp: followUpContent,
       chatId: body.message.chatId,
       messageId: body.message.messageId,
       config: {
@@ -272,7 +319,7 @@ export const POST = async (req: Request) => {
       id: body.message.chatId,
       sources: body.sources as SearchSources[],
       fileIds: body.files,
-      query: body.message.content,
+      query: message.content,
       projectId: body.projectId,
     });
 

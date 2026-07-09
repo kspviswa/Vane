@@ -922,6 +922,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
           key: embeddingModelProvider.key,
           providerId: embeddingModelProvider.providerId,
         },
+        visionModel: (() => {
+          const vp = localStorage.getItem('visionModelProviderId');
+          const vk = localStorage.getItem('visionModelKey');
+          return vp && vk ? { providerId: vp, key: vk } : null;
+        })(),
         systemInstructions: localStorage.getItem('systemInstructions'),
         userProfile: {
           name: localStorage.getItem('userName') || '',

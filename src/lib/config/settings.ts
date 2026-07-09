@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS: Record<string, any> = {
   chatModelKey: '',
   embeddingModelProviderId: '',
   embeddingModelKey: '',
+  visionModelProviderId: '',
+  visionModelKey: '',
   contextLength: '8192',
 };
 

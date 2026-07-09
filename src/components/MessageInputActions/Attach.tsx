@@ -26,6 +26,8 @@ const Attach = () => {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<any>();
 
+  const isImage = (file: File) => file.type.startsWith('image/');
+
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
 
@@ -42,19 +44,26 @@ const Attach = () => {
         data.append('files', selectedFiles[i]);
       }
 
-      const embeddingModelProvider = localStorage.getItem(
-        'embeddingModelProviderId',
-      );
-      const embeddingModel = localStorage.getItem('embeddingModelKey');
+      const hasImages = Array.from(selectedFiles).some(isImage);
+      const hasDocs = Array.from(selectedFiles).some((f) => !isImage(f));
 
-      if (!embeddingModelProvider || !embeddingModel) {
-        throw new Error('Please select an embedding model before uploading.');
+      if (hasDocs) {
+        const embeddingModelProvider = localStorage.getItem(
+          'embeddingModelProviderId',
+        );
+        const embeddingModel = localStorage.getItem('embeddingModelKey');
+
+        if (!embeddingModelProvider || !embeddingModel) {
+          throw new Error('Please select an embedding model before uploading.');
+        }
+
+        data.append('embedding_model_provider_id', embeddingModelProvider);
+        data.append('embedding_model_key', embeddingModel);
       }
 
-      data.append('embedding_model_provider_id', embeddingModelProvider);
-      data.append('embedding_model_key', embeddingModel);
+      const uploadUrl = hasImages && !hasDocs ? '/api/uploads/images' : '/api/uploads';
 
-      const res = await fetch(`/api/uploads`, {
+      const res = await fetch(uploadUrl, {
         method: 'POST',
         body: data,
       });
@@ -123,7 +132,7 @@ const Attach = () => {
                           type="file"
                           onChange={handleChange}
                           ref={fileInputRef}
-                          accept=".pdf,.docx,.txt"
+                          accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.gif,.webp"
                           multiple
                           hidden
                         />
@@ -186,7 +195,7 @@ const Attach = () => {
         type="file"
         onChange={handleChange}
         ref={fileInputRef}
-        accept=".pdf,.docx,.txt"
+        accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.gif,.webp"
         multiple
         hidden
       />
