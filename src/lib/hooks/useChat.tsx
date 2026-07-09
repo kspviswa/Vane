@@ -772,14 +772,31 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
         setLoading(false);
 
-        if (chatId) clearTimer(chatId);
         const elapsed = processingStartTime
           ? Math.floor((Date.now() - processingStartTime) / 1000)
           : 0;
+        if (chatId) clearTimer(chatId);
         const mins = Math.floor(elapsed / 60);
         const secs = elapsed % 60;
         const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-        toast.success(`Answer ready (${timeStr})`);
+
+        if (typeof document !== 'undefined') {
+          const onSameChat =
+            window.location.pathname === `/c/${chatId}` &&
+            document.visibilityState === 'visible';
+          if (!onSameChat) {
+            toast.success(`Answer ready (${timeStr})`, {
+              action: {
+                label: 'View',
+                onClick: () => {
+                  window.location.href = `/c/${chatId}`;
+                },
+              },
+              duration: 5000,
+            });
+          }
+        }
+
         if (typeof document !== 'undefined') {
           const q = message.query.length > 30 ? message.query.substring(0, 30).trim() + '...' : message.query;
           document.title = `✓ ${q} - Vane`;
