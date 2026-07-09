@@ -6,5 +6,5 @@ services:
     ports:
       - '7777:3000'
     volumes:
-      - ./data:/home/uttaram/data
+      - ~/uttaram-data:/home/uttaram/data
     restart: unless-stopped

@@ -34,7 +34,8 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Data (symlink to ~/uttaram-data — contents backed up separately)
+# Data (contents ignored, track only the directory via .gitkeep)
 data/*
+!data/.gitkeep
 
 certificates.build.sh.swp
