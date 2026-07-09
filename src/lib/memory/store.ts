@@ -160,21 +160,6 @@ class MemoryStore {
   async getUnprocessedMessages(): Promise<
     { messageId: string; chatId: string; query: string; createdAt: string }[]
   > {
-    const dbMemories = await db.select().from(memories).all();
-    const processedMessageIds = dbMemories
-      .map((m) => m.sourceMessageId)
-      .filter((id): id is string => id !== null);
-
-    const filters: any[] = [
-      eq(messages.status, 'completed' as any),
-      sql`${messages.query} IS NOT NULL`,
-      sql`${messages.query} != ''`,
-    ];
-
-    if (processedMessageIds.length > 0) {
-      filters.push(notInArray(messages.messageId, processedMessageIds));
-    }
-
     const result = await db
       .select({
         messageId: messages.messageId,
@@ -183,7 +168,14 @@ class MemoryStore {
         createdAt: messages.createdAt,
       })
       .from(messages)
-      .where(and(...filters))
+      .where(
+        and(
+          eq(messages.status, 'completed' as any),
+          sql`${messages.query} IS NOT NULL`,
+          sql`${messages.query} != ''`,
+          sql`${messages.extractedAt} IS NULL`,
+        ),
+      )
       .orderBy(messages.createdAt)
       .all();
 

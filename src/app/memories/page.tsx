@@ -12,6 +12,7 @@ import {
   Search,
   RefreshCw,
   Tag,
+  Stethoscope,
 } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -190,9 +191,17 @@ const Page = () => {
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
+  const [healthChecking, setHealthChecking] = useState(false);
+  const [healthResult, setHealthResult] = useState<{
+    deleted: number;
+    updated: number;
+    totalBefore: number;
+    totalAfter: number;
+  } | null>(null);
 
   const fetchMemories = useCallback(async () => {
     setLoading(true);
+    setHealthResult(null);
     try {
       const params = search ? `?search=${encodeURIComponent(search)}` : '';
       const res = await fetch(`/api/memories${params}`);
@@ -239,6 +248,30 @@ const Page = () => {
       toast.error(err.message);
     } finally {
       setExtracting(false);
+    }
+  };
+
+  const handleHealthCheck = async () => {
+    setHealthChecking(true);
+    setHealthResult(null);
+    try {
+      const res = await fetch('/api/memories/health-check', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setHealthResult(data);
+        toast.success(
+          data.deleted + data.updated > 0
+            ? `Cleaned up: ${data.deleted} deleted, ${data.updated} updated`
+            : 'Memories are already in good shape',
+        );
+        fetchMemories();
+      } else {
+        toast.error(data.error || 'Health check failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setHealthChecking(false);
     }
   };
 
@@ -298,8 +331,41 @@ const Page = () => {
             />
             {extracting ? 'Extracting...' : 'Extract Now'}
           </button>
+          <button
+            onClick={handleHealthCheck}
+            disabled={healthChecking}
+            className="inline-flex items-center gap-1.5 text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors disabled:opacity-50"
+          >
+            <Stethoscope
+              size={14}
+              className={healthChecking ? 'animate-pulse' : ''}
+            />
+            {healthChecking ? 'Checking...' : 'Health Check'}
+          </button>
         </div>
       </div>
+
+      {healthResult && (
+        <div className="mx-2 mt-4 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-sm text-emerald-800 dark:text-emerald-200">
+          <div className="flex items-center gap-2 font-medium mb-1">
+            <Stethoscope size={14} />
+            Memory Health Check Complete
+          </div>
+          <p>
+            {healthResult.totalBefore} memories → {healthResult.totalAfter}{' '}
+            memories.
+            {healthResult.deleted > 0 && (
+              <span> {healthResult.deleted} deleted.</span>
+            )}
+            {healthResult.updated > 0 && (
+              <span> {healthResult.updated} updated.</span>
+            )}
+            {healthResult.deleted === 0 && healthResult.updated === 0 && (
+              <span> No changes needed.</span>
+            )}
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-row items-center justify-center min-h-[60vh]">

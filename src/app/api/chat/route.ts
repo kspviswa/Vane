@@ -228,11 +228,14 @@ export const POST = async (req: Request) => {
             }) + '\n',
           ),
         );
-        writer.close();
-        session.removeAllListeners();
-        extractMemories().catch((err) =>
-          console.error('[Chat] Async memory extraction failed:', err),
-        );
+        extractMemories()
+          .catch((err) =>
+            console.error('[Chat] Async memory extraction failed:', err),
+          )
+          .finally(() => {
+            writer.close();
+            session.removeAllListeners();
+          });
       } else if (event === 'error') {
         writer.write(
           encoder.encode(

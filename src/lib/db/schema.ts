@@ -21,6 +21,7 @@ export const messages = sqliteTable('messages', {
     'classifying',
   ),
   usage: text('usage', { mode: 'json' }).$type<TokenUsage | null>().default(sql`NULL`),
+  extractedAt: text('extractedAt'),
 });
 
 interface DBFile {

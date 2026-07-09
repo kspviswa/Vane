@@ -1,4 +1,7 @@
 import z from 'zod';
+import db from '@/lib/db';
+import { messages } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import ModelRegistry from '@/lib/models/registry';
 import memoryStore from './store';
 import { MemoryCategory } from './types';
@@ -110,20 +113,27 @@ export async function extractMemories(): Promise<{
         schema: extractionSchema,
       })) as z.infer<typeof extractionSchema>;
 
-      if (!result.memories || result.memories.length === 0) continue;
+      if (result.memories && result.memories.length > 0) {
+        for (const fact of result.memories) {
+          const existing = await memoryStore.queryMemories(fact.content, 1, 0.92);
+          if (existing.length > 0) continue;
 
-      for (const fact of result.memories) {
-        const existing = await memoryStore.queryMemories(fact.content, 1, 0.92);
-        if (existing.length > 0) continue;
+          await memoryStore.addMemory({
+            content: fact.content,
+            category: fact.category as MemoryCategory,
+          });
+          totalExtracted++;
+        }
+      }
 
-        const sourceMsg = batch[0];
-        await memoryStore.addMemory({
-          content: fact.content,
-          category: fact.category as MemoryCategory,
-          sourceMessageId: sourceMsg.messageId,
-          sourceChatId: sourceMsg.chatId,
-        });
-        totalExtracted++;
+      // Mark all messages in this batch as processed
+      const now = new Date().toISOString();
+      for (const msg of batch) {
+        await db
+          .update(messages)
+          .set({ extractedAt: now })
+          .where(eq(messages.messageId, msg.messageId))
+          .execute();
       }
     } catch (err) {
       console.error('[Memory] Error processing batch:', err);
