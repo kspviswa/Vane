@@ -218,7 +218,7 @@ const loadMessages = async (
 
   const data = await res.json();
 
-  const messages = data.messages as Message[];
+  const messages = (data.messages || []) as Message[];
 
   setMessages(messages);
 
