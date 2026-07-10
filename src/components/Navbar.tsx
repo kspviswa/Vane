@@ -284,18 +284,12 @@ const Navbar = () => {
   }, [sections]);
 
   useEffect(() => {
-    if (!loading) return;
-    const intervalId = setInterval(() => {
-      if (sections.length > 0 && sections[0].message) {
-        const newTimeAgo = formatTimeDifference(
-          new Date(),
-          sections[0].message.createdAt,
-        );
-        setTimeAgo(newTimeAgo);
-      }
-    }, 1000);
-
-    return () => clearInterval(intervalId);
+    if (!loading || sections.length === 0) return;
+    const newTimeAgo = formatTimeDifference(
+      new Date(),
+      sections[0].message.createdAt,
+    );
+    setTimeAgo(newTimeAgo);
   }, [loading]);
 
   useEffect(() => {
