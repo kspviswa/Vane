@@ -1,4 +1,5 @@
 import {
+  NumberUIConfigField,
   SelectUIConfigField,
   StringUIConfigField,
   SwitchUIConfigField,
@@ -104,7 +105,7 @@ const SettingsInput = ({
   setValue,
   dataAdd,
 }: {
-  field: StringUIConfigField;
+  field: StringUIConfigField | NumberUIConfigField;
   value?: any;
   setValue: (value: any) => void;
   dataAdd: string;
@@ -113,13 +114,14 @@ const SettingsInput = ({
 
   const handleSave = async (newValue: any) => {
     setLoading(true);
-    setValue(newValue);
+    const parsed = field.type === 'number' ? Number(newValue) : newValue;
+    setValue(parsed);
     try {
       if (field.scope === 'client') {
-        localStorage.setItem(field.key, newValue);
+        localStorage.setItem(field.key, String(parsed));
       }
       emitClientConfigChanged();
-      await saveToApi(field.key, newValue, dataAdd, field.scope);
+      await saveToApi(field.key, parsed, dataAdd, field.scope);
     } catch (error) {
       console.error('Error saving config:', error);
       toast.error('Failed to save configuration.');
@@ -146,7 +148,7 @@ const SettingsInput = ({
             onBlur={(event) => handleSave(event.target.value)}
             className="w-full rounded-lg border border-light-200 dark:border-dark-200 bg-light-primary dark:bg-dark-primary px-3 py-2 lg:px-4 lg:py-3 pr-10 !text-xs lg:!text-[13px] text-black/80 dark:text-white/80 placeholder:text-black/40 dark:placeholder:text-white/40 focus-visible:outline-none focus-visible:border-light-300 dark:focus-visible:border-dark-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
             placeholder={field.placeholder}
-            type="text"
+            type={field.type === 'number' ? 'number' : 'text'}
             disabled={loading}
           />
           {loading && (
@@ -303,6 +305,7 @@ const SettingsField = ({
         />
       );
     case 'string':
+    case 'number':
       return (
         <SettingsInput
           field={field}

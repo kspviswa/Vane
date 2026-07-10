@@ -5,7 +5,7 @@ import { ConfigModelProvider } from '@/lib/config/types';
 
 type SaveConfigBody = {
   key: string;
-  value: string;
+  value: any;
 };
 
 export const GET = async (req: NextRequest) => {
@@ -46,7 +46,7 @@ export const POST = async (req: NextRequest) => {
   try {
     const body: SaveConfigBody = await req.json();
 
-    if (!body.key || !body.value) {
+    if (!body.key || body.value === undefined || body.value === '') {
       return Response.json(
         {
           message: 'Key and value are required.',
@@ -57,7 +57,16 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    configManager.updateConfig(body.key, body.value);
+    const uiConfig = configManager.getUIConfigSections();
+    const keyParts = body.key.split('.');
+    const section = keyParts[0];
+    const fieldKey = keyParts[1];
+    const searchFields = uiConfig.search.find((f) => f.key === fieldKey);
+    const fieldType = searchFields?.type;
+    const parsedValue =
+      fieldType === 'number' ? Number(body.value) : body.value;
+
+    configManager.updateConfig(body.key, parsedValue);
 
     return Response.json(
       {

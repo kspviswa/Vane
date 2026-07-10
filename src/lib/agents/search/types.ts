@@ -27,6 +27,8 @@ export type SearchAgentConfig = {
   userProfile?: UserProfile;
   enableMemories?: boolean;
   metadata?: ClientMetadata;
+  llmTimeout?: number;
+  llmMaxRetries?: number;
 };
 
 export type SearchAgentInput = {

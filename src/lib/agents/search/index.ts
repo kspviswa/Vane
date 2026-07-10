@@ -267,8 +267,8 @@ class SearchAgent {
           ],
         }),
       {
-        timeout: 60000,
-        maxRetries: 3,
+        timeout: input.config.llmTimeout || 60000,
+        maxRetries: input.config.llmMaxRetries || 3,
         onStatus: answerRetryHandler,
       },
     );

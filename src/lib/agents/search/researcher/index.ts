@@ -84,8 +84,8 @@ class Researcher {
             tools: availableTools,
           }),
         {
-          timeout: 30000,
-          maxRetries: 3,
+          timeout: input.config.llmTimeout || 30000,
+          maxRetries: input.config.llmMaxRetries || 3,
           onStatus: retryHandler,
         },
       );

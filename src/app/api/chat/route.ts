@@ -12,6 +12,7 @@ import UploadManager from '@/lib/uploads/manager';
 import { extractMemories } from '@/lib/memory/extractor';
 import { analyzeImagesWithVLM } from '@/lib/vision/analyze';
 import path from 'path';
+import configManager from '@/lib/config';
 
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
 
@@ -297,6 +298,8 @@ export const POST = async (req: Request) => {
       }
     });
 
+    const searchConfig = configManager.getCurrentConfig().search;
+
     agent.searchAsync(session, {
       chatHistory: history,
       followUp: followUpContent,
@@ -312,6 +315,8 @@ export const POST = async (req: Request) => {
         userProfile: body.userProfile || { name: '', location: '', aboutMe: '' },
         enableMemories: body.enableMemories,
         metadata: body.metadata,
+        llmTimeout: searchConfig.llmTimeout || 60000,
+        llmMaxRetries: searchConfig.llmMaxRetries || 3,
       },
     });
 

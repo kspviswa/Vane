@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AddProvider from './AddProviderDialog';
 import {
   ConfigModelProvider,
@@ -8,6 +8,29 @@ import {
 import ModelProvider from './ModelProvider';
 import ModelSelect from './ModelSelect';
 import ContextLengthSelect from './ContextLengthSelect';
+import SettingsField from '../../SettingsField';
+
+const llmTimeoutField: UIConfigField = {
+  name: 'LLM Timeout (ms)',
+  key: 'llmTimeout',
+  type: 'number',
+  required: false,
+  description: 'Timeout in milliseconds for LLM inference calls',
+  placeholder: '60000',
+  default: 60000,
+  scope: 'server',
+};
+
+const llmRetryField: UIConfigField = {
+  name: 'LLM Retry Count',
+  key: 'llmMaxRetries',
+  type: 'number',
+  required: false,
+  description: 'Number of retries when LLM inference times out',
+  placeholder: '3',
+  default: 3,
+  scope: 'server',
+};
 
 const Models = ({
   fields,
@@ -17,6 +40,14 @@ const Models = ({
   values: ConfigModelProvider[];
 }) => {
   const [providers, setProviders] = useState<ConfigModelProvider[]>(values);
+  const [searchConfig, setSearchConfig] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((data) => setSearchConfig(data.values.search || {}))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex-1 space-y-6 overflow-y-auto py-6">
@@ -43,6 +74,24 @@ const Models = ({
           type="embedding"
         />
         <ContextLengthSelect />
+      </div>
+      <div className="border-t border-light-200 dark:border-dark-200" />
+      <div className="flex flex-col px-6">
+        <h3 className="text-xs lg:text-xs text-black/70 dark:text-white/70 mb-4">
+          LLM Settings
+        </h3>
+        <SettingsField
+          field={llmTimeoutField}
+          value={searchConfig.llmTimeout ?? llmTimeoutField.default}
+          dataAdd="search"
+        />
+        <div className="mt-4">
+          <SettingsField
+            field={llmRetryField}
+            value={searchConfig.llmMaxRetries ?? llmRetryField.default}
+            dataAdd="search"
+          />
+        </div>
       </div>
       <div className="border-t border-light-200 dark:border-dark-200" />
       <div className="flex flex-row justify-between items-center px-6 ">

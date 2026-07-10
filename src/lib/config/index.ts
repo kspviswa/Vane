@@ -18,6 +18,8 @@ class ConfigManager {
     modelProviders: [],
     search: {
       searxngURL: '',
+      llmTimeout: 60000,
+      llmMaxRetries: 3,
     },
   };
   uiConfigSections: UIConfigSections = {
