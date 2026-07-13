@@ -844,6 +844,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       messageId = messageId ?? crypto.randomBytes(7).toString('hex');
     const backendId = crypto.randomBytes(20).toString('hex');
 
+    const messageFiles = fileIds.map((id) => {
+      const f = files.find((f) => f.fileId === id);
+      return { fileId: id, name: f?.fileName || '' };
+    });
+
     const newMessage: Message = {
       messageId,
       chatId: chatId!,
@@ -853,6 +858,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       status: 'answering',
       phase: 'classifying',
       createdAt: new Date(),
+      files: messageFiles,
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);

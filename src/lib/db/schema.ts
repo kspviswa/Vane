@@ -22,6 +22,9 @@ export const messages = sqliteTable('messages', {
   ),
   usage: text('usage', { mode: 'json' }).$type<TokenUsage | null>().default(sql`NULL`),
   extractedAt: text('extractedAt'),
+  files: text('files', { mode: 'json' })
+    .$type<DBFile[]>()
+    .default(sql`'[]'`),
 });
 
 interface DBFile {

@@ -97,6 +97,14 @@ const MessageBox = ({
     chatHistory,
   } = useChat();
 
+  const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp']);
+  const uploadsBase = '/api/uploads';
+  const messageFiles = (section.message.files || []).map((f) => ({
+    fileName: f.name,
+    fileExtension: f.name.split('.').pop() || '',
+    fileId: f.fileId,
+  }));
+
   const parsedMessage = renderMath(section.parsedTextBlocks.join('\n\n'));
   const speechMessage = section.speechMessage || '';
   const thinkingEnded = section.thinkingEnded;
@@ -209,6 +217,46 @@ const MessageBox = ({
           </button>
         )}
       </div>
+
+      {messageFiles.length > 0 && (
+        <div className="flex flex-wrap gap-3 lg:w-9/12">
+          {messageFiles.map((f) => {
+            const isImage = IMAGE_EXTS.has(f.fileExtension);
+            const src = `${uploadsBase}/${f.fileId}`;
+            return (
+              <a
+                key={f.fileId}
+                href={src}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative overflow-hidden rounded-xl border border-light-200 dark:border-dark-200 bg-light-secondary dark:bg-dark-secondary hover:border-[#24A0ED]/50 dark:hover:border-[#24A0ED]/50 transition-all duration-200"
+                title={f.fileName}
+              >
+                {isImage ? (
+                  <div className="relative">
+                    <img
+                      src={src}
+                      alt={f.fileName}
+                      className="w-24 h-24 object-cover rounded-xl"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 rounded-xl" />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center w-24 h-24 gap-1 p-2">
+                    <svg className="w-8 h-8 text-black/50 dark:text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-[10px] text-black/50 dark:text-white/50 truncate max-w-full text-center leading-tight">
+                      {f.fileName}
+                    </span>
+                  </div>
+                )}
+              </a>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex flex-col space-y-9 lg:space-y-0 lg:flex-row lg:justify-between lg:space-x-9">
         <div

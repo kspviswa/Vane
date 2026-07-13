@@ -23,6 +23,7 @@ export interface Message extends BaseMessage {
   status: 'answering' | 'completed' | 'error';
   phase?: 'classifying' | 'researching' | 'writing';
   usage?: TokenUsage | null;
+  files?: { name: string; fileId: string }[];
 }
 
 export interface File {

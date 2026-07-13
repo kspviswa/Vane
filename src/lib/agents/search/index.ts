@@ -13,6 +13,7 @@ import type { TokenUsage } from '@/lib/models/types';
 import memoryStore from '@/lib/memory/store';
 import { withRetryStream } from '@/lib/utils/withRetry';
 import { createRetryStatusHandler } from '@/lib/utils/emitRetryStatus';
+import UploadManager from '@/lib/uploads/manager';
 
 class SearchAgent {
   private async syncBlocksToDb(
@@ -41,6 +42,11 @@ class SearchAgent {
   }
 
   async searchAsync(session: SessionManager, input: SearchAgentInput) {
+    const fileRecords = input.config.fileIds
+      .map((id) => UploadManager.getFile(id))
+      .filter((f): f is NonNullable<typeof f> => f !== null)
+      .map((f) => ({ fileId: f.id, name: f.name }));
+
     const exists = await db.query.messages.findFirst({
       where: and(
         eq(messages.chatId, input.chatId),
@@ -58,6 +64,7 @@ class SearchAgent {
         status: 'answering',
         responseBlocks: [],
         phase: 'classifying',
+        files: fileRecords,
       });
     } else {
       await db
@@ -73,6 +80,7 @@ class SearchAgent {
           backendId: session.id,
           responseBlocks: [],
           phase: 'classifying',
+          files: fileRecords,
         })
         .where(
           and(
