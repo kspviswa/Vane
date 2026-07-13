@@ -12,7 +12,7 @@ class ThrottledLLM extends BaseLLM<any> {
   private inner: BaseLLM<any>;
 
   constructor(inner: BaseLLM<any>) {
-    super(inner.config);
+    super(inner['config']);
     this.inner = inner;
   }
 
