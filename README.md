@@ -14,9 +14,13 @@ This fork introduces several features not found in the upstream Vane project:
 - **Pipeline state tracking** — Real-time phase display during research (searching, extracting, writing, etc.) so you always know what the agent is doing.
 - **Timeout + automatic retries** — Failed LLM calls and SearXNG requests get up to 3 retries with visible progress. No silent failures.
 - **Settings as a dedicated page** — Full-page settings UI instead of a modal, with DB-backed persistence for all preferences (theme, location, name, model selection, etc.).
+- **LLM throttle** — Limit the number of concurrent LLM calls from the settings page. Essential when sharing a local model server with other users or avoiding GPU memory exhaustion.
+- **Mid-conversation mode switching** — Change between Speed, Balanced, and Quality modes on follow-up messages, not just the first query.
+- **Dedicated classification model** — Optionally use a separate (smaller) model for query classification, reserving your main model for writing answers.
 - **Math rendering & PDF export** — KaTeX-rendered math expressions in answers, with DOM-clone PDF export for sharing.
 - **Smarter citations** — Copy answers to clipboard with citation HTML tags properly stripped.
 - **iOS PWA support** — Installable as a standalone web app on iOS Safari.
+- **Chat state reliability** — Loading and navigation states derived from backend message data, so refreshing or navigating between chats always shows the correct state.
 
 ## ✨ Features
 
@@ -105,8 +109,8 @@ http://localhost:7777/?q=%s
 - **Persistent personalization** — The memories feature lets the LLM learn from past conversations, something the upstream didn't have.
 - **Better organization** — Projects let you group related chats together.
 - **Transparency** — Real-time pipeline state and token usage tracking give you visibility into what the agent is doing.
-- **Resilience** — Timeouts and automatic retries prevent silent failures.
-- **Everyday usability** — Image uploads, math rendering, PDF export, and citation fixes make it practical for daily use.
+- **Resilience** — Timeouts, automatic retries, and LLM throttling prevent silent failures and resource exhaustion.
+- **Everyday usability** — Image uploads, mid-conversation mode switching, math rendering, PDF export, and citation fixes make it practical for daily use.
 
 ## License
 
