@@ -64,7 +64,7 @@ const Optimization = () => {
           <AnimatePresence>
             {open && (
               <PopoverPanel
-                className="absolute z-10 w-64 md:w-[250px] right-0 md:left-0 bottom-full mb-2 md:bottom-auto md:mb-0 md:mt-1"
+                className="absolute z-10 w-64 md:w-[250px] right-0 bottom-full mb-2"
                 static
               >
                 <motion.div
@@ -72,7 +72,7 @@ const Optimization = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.1, ease: 'easeOut' }}
-                  className="origin-bottom-right md:origin-top-left flex flex-col space-y-2 bg-light-primary dark:bg-dark-primary border rounded-lg border-light-200 dark:border-dark-200 w-full p-2 max-h-[200px] md:max-h-none overflow-y-auto"
+                  className="origin-bottom-right flex flex-col space-y-2 bg-light-primary dark:bg-dark-primary border rounded-lg border-light-200 dark:border-dark-200 w-full p-2 max-h-[200px] md:max-h-none overflow-y-auto"
                 >
                   {OptimizationModes.map((mode, i) => (
                     <PopoverButton
