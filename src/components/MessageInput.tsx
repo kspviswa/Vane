@@ -3,12 +3,11 @@ import { ArrowUp, StopCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import AttachSmall from './MessageInputActions/AttachSmall';
+import Optimization from './MessageInputActions/Optimization';
 import { useChat } from '@/lib/hooks/useChat';
 
 const MessageInput = () => {
   const { loading, sendMessage, stop } = useChat();
-
-  const [copilotEnabled, setCopilotEnabled] = useState(false);
   const [message, setMessage] = useState('');
   const [textareaRows, setTextareaRows] = useState(1);
   const [mode, setMode] = useState<'multi' | 'single'>('single');
@@ -53,20 +52,17 @@ const MessageInput = () => {
         sendMessage(message);
         setMessage('');
       }}
-      onKeyDown={(e) => {
-        if (loading) return;
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage(message);
-          setMessage('');
-        }
-      }}
       className={cn(
         'relative bg-light-secondary dark:bg-dark-secondary p-4 flex items-center overflow-visible border border-light-200 dark:border-dark-200 shadow-sm shadow-light-200/10 dark:shadow-black/20 transition-all duration-200 focus-within:border-light-300 dark:focus-within:border-dark-300',
         mode === 'multi' ? 'flex-col rounded-2xl' : 'flex-row rounded-full',
       )}
     >
-      {mode === 'single' && <AttachSmall />}
+      {mode === 'single' && (
+        <>
+          <AttachSmall />
+          <Optimization />
+        </>
+      )}
       <TextareaAutosize
         ref={inputRef}
         value={message}
@@ -92,7 +88,10 @@ const MessageInput = () => {
       )}
       {mode === 'multi' && (
         <div className="flex flex-row items-center justify-between w-full pt-2">
-          <AttachSmall />
+          <div className="flex flex-row items-center space-x-1">
+            <AttachSmall />
+            <Optimization />
+          </div>
           <button
             disabled={!loading && message.trim().length === 0}
             onClick={loading ? stop : undefined}
