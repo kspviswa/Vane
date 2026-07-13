@@ -336,6 +336,7 @@ export const POST = async (req: Request) => {
     agent.searchAsync(session, {
       chatHistory: history,
       followUp: followUpContent,
+      originalQuery: message.content,
       chatId: body.message.chatId,
       messageId: body.message.messageId,
       config: {

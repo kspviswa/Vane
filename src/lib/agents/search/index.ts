@@ -53,7 +53,7 @@ class SearchAgent {
         chatId: input.chatId,
         messageId: input.messageId,
         backendId: session.id,
-        query: input.followUp,
+        query: input.originalQuery,
         createdAt: new Date().toISOString(),
         status: 'answering',
         responseBlocks: [],

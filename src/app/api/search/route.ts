@@ -77,6 +77,7 @@ export const POST = async (req: Request) => {
         llmMaxRetries: searchConfig.llmMaxRetries || 3,
       },
       followUp: body.query,
+      originalQuery: body.query,
       chatId: crypto.randomUUID(),
       messageId: crypto.randomUUID(),
     });
