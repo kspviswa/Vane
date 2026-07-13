@@ -28,6 +28,8 @@ import { useSpeech } from 'react-text-to-speech';
 import ThinkBox from './ThinkBox';
 import { useChat, Section } from '@/lib/hooks/useChat';
 import Citation from './MessageRenderer/Citation';
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
 import AssistantSteps from './AssistantSteps';
 import { ResearchBlock } from '@/lib/types';
 import Renderer from './Widgets/Renderer';
@@ -98,6 +100,9 @@ const MessageBox = ({
     files: chatFiles,
     fileIds: chatFileIds,
   } = useChat();
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxSlides, setLightboxSlides] = useState<{ src: string }[]>([]);
 
   const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp']);
   const uploadsBase = '/api/uploads';
@@ -229,12 +234,17 @@ const MessageBox = ({
             const isImage = IMAGE_EXTS.has(f.fileExtension);
             const src = `${uploadsBase}/${f.fileId}`;
             return (
-              <a
+              <div
                 key={f.fileId}
-                href={src}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative overflow-hidden rounded-xl border border-light-200 dark:border-dark-200 bg-light-secondary dark:bg-dark-secondary hover:border-[#24A0ED]/50 dark:hover:border-[#24A0ED]/50 transition-all duration-200"
+                onClick={() => {
+                  if (isImage) {
+                    setLightboxSlides([{ src }]);
+                    setLightboxOpen(true);
+                  } else {
+                    window.open(src, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+                className="group relative overflow-hidden rounded-xl border border-light-200 dark:border-dark-200 bg-light-secondary dark:bg-dark-secondary hover:border-[#24A0ED]/50 dark:hover:border-[#24A0ED]/50 transition-all duration-200 cursor-zoom-in"
                 title={f.fileName}
               >
                 {isImage ? (
@@ -257,10 +267,17 @@ const MessageBox = ({
                     </span>
                   </div>
                 )}
-              </a>
+              </div>
             );
           })}
         </div>
+      )}
+      {lightboxOpen && (
+        <Lightbox
+          open={lightboxOpen}
+          close={() => setLightboxOpen(false)}
+          slides={lightboxSlides}
+        />
       )}
 
       <div className="flex flex-col space-y-9 lg:space-y-0 lg:flex-row lg:justify-between lg:space-x-9">
