@@ -110,7 +110,7 @@ function KnowledgeGraph({ data }: { data: AnalyticsData }) {
   ];
 
   const nodesByCluster = data.graph.clusters.map((cluster) => ({
-    name: `Topic ${cluster.id + 1}`,
+    name: cluster.label,
     count: cluster.chatIds.length,
     color: clusterColors[cluster.id % clusterColors.length],
   }));
@@ -140,51 +140,47 @@ function KnowledgeGraph({ data }: { data: AnalyticsData }) {
 }
 
 function CuriosityHeatmap({ data }: { data: AnalyticsData }) {
-  const heatmapData: { day: string; hour: string; count: number }[] = [];
-
-  data.heatmap.forEach((day, dayIndex) => {
-    day.forEach((cell) => {
-      heatmapData.push({
-        day: DAYS[dayIndex],
-        hour: `${cell.hour}:00`,
-        count: cell.count,
-      });
-    });
-  });
-
-  const maxCount = Math.max(...heatmapData.map((d) => d.count), 1);
+  const maxCount = Math.max(
+    ...data.heatmap.flat().map((c) => c.count),
+    1,
+  );
 
   return (
-    <div className="h-[300px] overflow-auto">
-      <div className="grid grid-cols-24 gap-0.5 min-w-[600px]">
-        {DAYS.map((day) =>
-          Array.from({ length: 24 }, (_, hour) => {
-            const cell = heatmapData.find(
-              (d) => d.day === day && d.hour === `${hour}:00`,
-            );
-            const count = cell?.count || 0;
-            const intensity = count / maxCount;
+    <div className="space-y-2">
+      <div className="flex">
+        <div className="w-10 flex-shrink-0" />
+        <div className="flex-1 flex justify-between text-xs text-black/50 dark:text-white/50 px-1">
+          {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => (
+            <span key={h}>{h}:00</span>
+          ))}
+        </div>
+      </div>
 
-            return (
-              <div
-                key={`${day}-${hour}`}
-                className="w-6 h-6 rounded-sm"
-                style={{
-                  backgroundColor: `rgba(59, 130, 246, ${intensity})`,
-                }}
-                title={`${day} ${hour}:00 - ${count} chats`}
-              />
-            );
-          }),
-        )}
-      </div>
-      <div className="flex justify-between mt-2 text-xs text-black/50 dark:text-white/50">
-        <span>0:00</span>
-        <span>6:00</span>
-        <span>12:00</span>
-        <span>18:00</span>
-        <span>23:00</span>
-      </div>
+      {DAYS.map((day, dayIndex) => (
+        <div key={day} className="flex items-center">
+          <div className="w-10 flex-shrink-0 text-xs text-black/50 dark:text-white/50 pr-2 text-right">
+            {day}
+          </div>
+          <div className="flex-1 flex gap-px">
+            {data.heatmap[dayIndex].map((cell) => {
+              const intensity = cell.count / maxCount;
+              return (
+                <div
+                  key={`${day}-${cell.hour}`}
+                  className="flex-1 h-5 rounded-sm"
+                  style={{
+                    backgroundColor:
+                      cell.count === 0
+                        ? 'rgba(0,0,0,0.05)'
+                        : `rgba(59, 130, 246, ${0.2 + intensity * 0.8})`,
+                  }}
+                  title={`${day} ${cell.hour}:00 - ${cell.count} chats`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -404,7 +400,7 @@ export default function AnalyticsPage() {
                 className="flex justify-between items-center text-xs"
               >
                 <span className="text-black/70 dark:text-white/70">
-                  Topic {cluster.id + 1}
+                  {cluster.label}
                 </span>
                 <span className="text-black/50 dark:text-white/50">
                   {cluster.chatIds.length} chats

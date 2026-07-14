@@ -72,8 +72,44 @@ interface AnalyticsResponse {
   metrics: AnalyticsMetrics;
 }
 
+function extractTopicLabel(titles: string[]): string {
+  const stopWords = new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
+    'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+    'could', 'should', 'may', 'might', 'shall', 'can', 'what', 'how',
+    'why', 'when', 'where', 'who', 'which', 'this', 'that', 'these',
+    'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him',
+    'her', 'us', 'them', 'my', 'your', 'his', 'its', 'our', 'their',
+  ]);
+
+  const wordCounts = new Map<string, number>();
+
+  for (const title of titles) {
+    const words = title.toLowerCase().split(/\s+/);
+    for (const word of words) {
+      const cleaned = word.replace(/[^a-z0-9]/g, '');
+      if (cleaned.length > 2 && !stopWords.has(cleaned)) {
+        wordCounts.set(cleaned, (wordCounts.get(cleaned) || 0) + 1);
+      }
+    }
+  }
+
+  const sorted = Array.from(wordCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  if (sorted.length === 0) return 'General';
+  if (sorted.length === 1) return sorted[0][0].charAt(0).toUpperCase() + sorted[0][0].slice(1);
+  if (sorted.length === 2) {
+    return `${sorted[0][0].charAt(0).toUpperCase() + sorted[0][0].slice(1)} & ${sorted[1][0].charAt(0).toUpperCase() + sorted[1][0].slice(1)}`;
+  }
+  return `${sorted[0][0].charAt(0).toUpperCase() + sorted[0][0].slice(1)}, ${sorted[1][0].charAt(0).toUpperCase() + sorted[1][0].slice(1)} & ${sorted[2][0].charAt(0).toUpperCase() + sorted[2][0].slice(1)}`;
+}
+
 function clusterChats(
   chatEmbeddings: { id: string; embedding: number[] }[],
+  chatTitles: Map<string, string>,
   threshold: number = 0.7,
 ): Cluster[] {
   const visited = new Set<string>();
@@ -96,9 +132,12 @@ function clusterChats(
       }
     }
 
+    const titles = cluster.map((id) => chatTitles.get(id) || '').filter(Boolean);
+    const label = extractTopicLabel(titles);
+
     clusters.push({
       id: clusterId++,
-      label: `Topic ${clusterId}`,
+      label,
       chatIds: cluster,
     });
   }
@@ -338,7 +377,12 @@ export async function GET() {
         embedding: JSON.parse(c.embedding!),
       }));
 
-    const clusters = clusterChats(chatEmbeddings, 0.7);
+    const chatTitles = new Map<string, string>();
+    for (const chat of allChats) {
+      chatTitles.set(chat.id, chat.title);
+    }
+
+    const clusters = clusterChats(chatEmbeddings, chatTitles, 0.7);
 
     const nodes: GraphNode[] = allChats.map((chat) => {
       const cluster = clusters.find((c) => c.chatIds.includes(chat.id));
