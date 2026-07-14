@@ -382,7 +382,7 @@ export async function GET() {
       chatTitles.set(chat.id, chat.title);
     }
 
-    const clusters = clusterChats(chatEmbeddings, chatTitles, 0.7);
+    const clusters = clusterChats(chatEmbeddings, chatTitles, 0.5);
 
     const nodes: GraphNode[] = allChats.map((chat) => {
       const cluster = clusters.find((c) => c.chatIds.includes(chat.id));
@@ -413,7 +413,7 @@ export async function GET() {
           chatEmbeddings[j].embedding,
         );
 
-        if (similarity >= 0.7) {
+        if (similarity >= 0.5) {
           const existingEdge = edges.find(
             (e) =>
               (e.source === chatEmbeddings[i].id &&
