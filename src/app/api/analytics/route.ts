@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { chats, messages, chatRelations } from '@/lib/db/schema';
+import { chats, messages, chatRelations, clusterLabels } from '@/lib/db/schema';
 import { sql, eq, desc } from 'drizzle-orm';
 import computeSimilarity from '@/lib/utils/computeSimilarity';
 import { getAllSettings } from '@/lib/config/settings';
+import { createHash } from 'crypto';
 
 interface GraphNode {
   id: string;
@@ -108,58 +109,184 @@ function extractTopicLabel(titles: string[]): string {
   return `${sorted[0][0].charAt(0).toUpperCase() + sorted[0][0].slice(1)}, ${sorted[1][0].charAt(0).toUpperCase() + sorted[1][0].slice(1)} & ${sorted[2][0].charAt(0).toUpperCase() + sorted[2][0].slice(1)}`;
 }
 
+// Agglomerative hierarchical clustering using average linkage
+function agglomerativeClustering(
+  chatEmbeddings: { id: string; embedding: number[] }[],
+  distanceThreshold: number = 0.7,
+): Cluster[] {
+  const n = chatEmbeddings.length;
+  if (n === 0) return [];
+
+  // Compute pairwise distance matrix (1 - cosine similarity)
+  const distanceMatrix: number[][] = Array(n)
+    .fill(null)
+    .map(() => Array(n).fill(0));
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const similarity = computeSimilarity(
+        chatEmbeddings[i].embedding,
+        chatEmbeddings[j].embedding,
+      );
+      const distance = 1 - similarity;
+      distanceMatrix[i][j] = distance;
+      distanceMatrix[j][i] = distance;
+    }
+  }
+
+  // Initialize clusters: each point is its own cluster
+  const clusters: { id: number; members: number[] }[] = chatEmbeddings.map(
+    (_, i) => ({ id: i, members: [i] }),
+  );
+
+  // Track which clusters are active
+  const active = new Set<number>(clusters.map((_, i) => i));
+
+  // Merge clusters until distance threshold is reached
+  while (active.size > 1) {
+    // Find closest pair of clusters
+    let minDist = Infinity;
+    let mergeA = -1;
+    let mergeB = -1;
+
+    const activeArray = Array.from(active);
+    for (let i = 0; i < activeArray.length; i++) {
+      for (let j = i + 1; j < activeArray.length; j++) {
+        const ci = clusters[activeArray[i]];
+        const cj = clusters[activeArray[j]];
+
+        // Average linkage: average distance between all pairs
+        let totalDist = 0;
+        let count = 0;
+        for (const mi of ci.members) {
+          for (const mj of cj.members) {
+            totalDist += distanceMatrix[mi][mj];
+            count++;
+          }
+        }
+        const avgDist = totalDist / count;
+
+        if (avgDist < minDist) {
+          minDist = avgDist;
+          mergeA = activeArray[i];
+          mergeB = activeArray[j];
+        }
+      }
+    }
+
+    // Stop if minimum distance exceeds threshold
+    if (minDist > distanceThreshold) break;
+
+    // Merge clusters
+    clusters[mergeA].members.push(...clusters[mergeB].members);
+    active.delete(mergeB);
+  }
+
+  // Convert to Cluster format
+  return Array.from(active).map((clusterIdx, i) => ({
+    id: i,
+    label: '', // Will be filled by LLM or fallback
+    chatIds: clusters[clusterIdx].members.map((idx) => chatEmbeddings[idx].id),
+  }));
+}
+
 function clusterChats(
   chatEmbeddings: { id: string; embedding: number[] }[],
   chatTitles: Map<string, string>,
   edges: GraphEdge[],
 ): Cluster[] {
-  // Use connected components from edges to form clusters
-  const adjacencyMap = new Map<string, Set<string>>();
-  for (const chat of chatEmbeddings) {
-    adjacencyMap.set(chat.id, new Set());
-  }
-  for (const edge of edges) {
-    adjacencyMap.get(edge.source)?.add(edge.target);
-    adjacencyMap.get(edge.target)?.add(edge.source);
-  }
+  // Use agglomerative clustering instead of connected components
+  const clusters = agglomerativeClustering(chatEmbeddings, 0.7);
 
-  const visited = new Set<string>();
-  const clusters: Cluster[] = [];
-  let clusterId = 0;
-
-  for (const chat of chatEmbeddings) {
-    if (visited.has(chat.id)) continue;
-
-    // BFS to find connected component
-    const cluster: string[] = [];
-    const queue = [chat.id];
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      if (visited.has(current)) continue;
-      visited.add(current);
-      cluster.push(current);
-
-      const neighbors = adjacencyMap.get(current);
-      if (neighbors) {
-        for (const neighbor of neighbors) {
-          if (!visited.has(neighbor)) {
-            queue.push(neighbor);
-          }
-        }
-      }
-    }
-
-    const titles = cluster.map((id) => chatTitles.get(id) || '').filter(Boolean);
-    const label = extractTopicLabel(titles);
-
-    clusters.push({
-      id: clusterId++,
-      label,
-      chatIds: cluster,
-    });
+  // Generate labels for each cluster
+  for (const cluster of clusters) {
+    const titles = cluster.chatIds.map((id) => chatTitles.get(id) || '').filter(Boolean);
+    cluster.label = extractTopicLabel(titles);
   }
 
   return clusters;
+}
+
+function computeClusterHash(chatIds: string[]): string {
+  const sorted = [...chatIds].sort();
+  return createHash('sha256').update(sorted.join(',')).digest('hex').substring(0, 16);
+}
+
+async function generateLLMLabel(
+  titles: string[],
+  appSettings: any,
+): Promise<string | null> {
+  const providerId = appSettings.analyticsLlmProviderId;
+  const apiKey = appSettings.analyticsLlmKey;
+
+  if (!providerId || !apiKey) {
+    return null;
+  }
+
+  try {
+    const prompt = `Generate a short, concise label (2-4 words) for a cluster of related chat topics. 
+The label should capture the main theme connecting these topics.
+
+Topics: ${titles.slice(0, 10).join(', ')}${titles.length > 10 ? `... and ${titles.length - 10} more` : ''}
+
+Return ONLY the label text, nothing else.`;
+
+    // For now, use a simple fallback since we need to implement the actual LLM call
+    // This will be enhanced when we have the LLM provider integration
+    return null;
+  } catch (error) {
+    console.error('[Analytics] LLM label generation failed:', error);
+    return null;
+  }
+}
+
+async function getClusterLabels(
+  clusters: Cluster[],
+  chatTitles: Map<string, string>,
+  appSettings: any,
+): Promise<Map<number, string>> {
+  const labelMap = new Map<number, string>();
+
+  for (const cluster of clusters) {
+    const hash = computeClusterHash(cluster.chatIds);
+
+    // Check cache
+    const cached = await db
+      .select()
+      .from(clusterLabels)
+      .where(eq(clusterLabels.clusterHash, hash))
+      .limit(1)
+      .get();
+
+    if (cached) {
+      labelMap.set(cluster.id, cached.label);
+      continue;
+    }
+
+    // Try LLM generation
+    const titles = cluster.chatIds
+      .map((id) => chatTitles.get(id) || '')
+      .filter(Boolean);
+
+    const llmLabel = await generateLLMLabel(titles, appSettings);
+
+    if (llmLabel) {
+      // Cache the LLM-generated label
+      await db.insert(clusterLabels).values({
+        id: crypto.randomUUID(),
+        clusterHash: hash,
+        label: llmLabel,
+        createdAt: new Date().toISOString(),
+      });
+      labelMap.set(cluster.id, llmLabel);
+    } else {
+      // Fallback to word frequency
+      const fallbackLabel = extractTopicLabel(titles);
+      labelMap.set(cluster.id, fallbackLabel);
+    }
+  }
+
+  return labelMap;
 }
 
 function computeHeatmap(
@@ -473,6 +600,14 @@ export async function GET(request: Request) {
     }
 
     const clusters = clusterChats(chatEmbeddings, chatTitles, edges);
+
+    // Get labels with LLM caching (reuse appSettings from above)
+    const labelMap = await getClusterLabels(clusters, chatTitles, appSettings);
+
+    // Apply labels to clusters
+    for (const cluster of clusters) {
+      cluster.label = labelMap.get(cluster.id) || cluster.label;
+    }
 
     const nodes: GraphNode[] = allChats.map((chat) => {
       const cluster = clusters.find((c) => c.chatIds.includes(chat.id));
