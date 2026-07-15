@@ -136,6 +136,8 @@ export default function SettingsPage() {
                 ? {
                     similarityThreshold: settingsData.data.similarityThreshold,
                     knnNeighbors: settingsData.data.knnNeighbors,
+                    analyticsLlmProviderId: settingsData.data.analyticsLlmProviderId,
+                    analyticsLlmKey: settingsData.data.analyticsLlmKey,
                   }
                 : {}),
             },

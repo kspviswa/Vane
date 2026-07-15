@@ -5,6 +5,8 @@ import { sql, eq, desc } from 'drizzle-orm';
 import computeSimilarity from '@/lib/utils/computeSimilarity';
 import { getAllSettings } from '@/lib/config/settings';
 import { createHash } from 'crypto';
+import ModelRegistry from '@/lib/models/registry';
+import { getConfiguredModelProviderById } from '@/lib/config/serverRegistry';
 
 interface GraphNode {
   id: string;
@@ -217,23 +219,43 @@ async function generateLLMLabel(
   appSettings: any,
 ): Promise<string | null> {
   const providerId = appSettings.analyticsLlmProviderId;
-  const apiKey = appSettings.analyticsLlmKey;
+  const modelKey = appSettings.analyticsLlmKey;
 
-  if (!providerId || !apiKey) {
+  if (!providerId || !modelKey) {
     return null;
   }
 
   try {
-    const prompt = `Generate a short, concise label (2-4 words) for a cluster of related chat topics. 
-The label should capture the main theme connecting these topics.
+    const provider = getConfiguredModelProviderById(providerId);
+    if (!provider) {
+      console.warn('[Analytics] Provider not found:', providerId);
+      return null;
+    }
 
-Topics: ${titles.slice(0, 10).join(', ')}${titles.length > 10 ? `... and ${titles.length - 10} more` : ''}
+    const registry = new ModelRegistry();
+    const llm = await registry.loadChatModel(providerId, modelKey);
 
-Return ONLY the label text, nothing else.`;
+    const topicList = titles.slice(0, 10).join(', ') + (titles.length > 10 ? `... and ${titles.length - 10} more` : '');
 
-    // For now, use a simple fallback since we need to implement the actual LLM call
-    // This will be enhanced when we have the LLM provider integration
-    return null;
+    const result = await llm.generateText({
+      messages: [
+        {
+          role: 'system',
+          content: 'You generate short, concise labels for topic clusters. Return ONLY the label text, nothing else. Labels should be 2-4 words maximum.',
+        },
+        {
+          role: 'user',
+          content: `Generate a short label (2-4 words) for a cluster of related chat topics:\n\n${topicList}`,
+        },
+      ],
+      options: {
+        temperature: 0.3,
+        maxTokens: 20,
+      },
+    });
+
+    const label = result.content.trim().replace(/^["']|["']$/g, '');
+    return label.length > 0 ? label : null;
   } catch (error) {
     console.error('[Analytics] LLM label generation failed:', error);
     return null;
