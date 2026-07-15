@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import SettingsField from '@/components/Settings/SettingsField';
 import ModelSelect from '@/components/Settings/Sections/Models/ModelSelect';
 import { UIConfigField, ConfigModelProvider } from '@/lib/config/types';
@@ -11,6 +12,20 @@ export default function AnalyticsSection({
   fields: UIConfigField[];
   values: Record<string, any>;
 }) {
+  const [providers, setProviders] = useState<ConfigModelProvider[]>([]);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((data) => {
+        const modelProviders = data.values?.modelProviders || [];
+        setProviders(modelProviders.filter((p: ConfigModelProvider) =>
+          p.chatModels.some((m) => m.key !== 'error'),
+        ));
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
       <div className="space-y-1">
@@ -45,7 +60,7 @@ export default function AnalyticsSection({
             </p>
           </div>
           <ModelSelect
-            providers={[]}
+            providers={providers}
             type="analytics"
           />
         </div>
