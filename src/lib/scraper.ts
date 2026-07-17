@@ -111,6 +111,59 @@ class Scraper {
       }
     }
   }
+
+  static async scrapeHTML(
+    url: string,
+  ): Promise<{ html: string; title: string }> {
+    await this.initBrowser();
+
+    if (!this.browser) throw new Error('Browser not initialized');
+
+    const context = await this.browser.newContext({
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+    });
+
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
+
+    const page = await context.newPage();
+
+    this.userCount++;
+
+    try {
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: this.NAVIGATION_TIMEOUT,
+      });
+
+      await page
+        .waitForLoadState('load', { timeout: 5000 })
+        .catch(() => undefined);
+      await page.waitForTimeout(500);
+
+      const html = await page.content();
+      const title = await page.title();
+
+      return { html, title };
+    } catch (err) {
+      console.log(`Error scraping HTML for ${url}:`, err);
+
+      return {
+        title: 'Failed to scrape',
+        html: '',
+      };
+    } finally {
+      this.userCount--;
+
+      await context.close().catch(() => undefined);
+
+      if (this.userCount === 0) {
+        this.scheduleIdleKill();
+      }
+    }
+  }
 }
 
 export default Scraper;

@@ -32,7 +32,7 @@ COPY drizzle ./drizzle
 RUN mkdir /home/uttaram/uploads
 
 RUN npx playwright install --with-deps --only-shell chromium \
-    && rm -rf /root/.cache /tmp/*
+    && rm -rf /root/.cache/puppeteer /root/.cache/ms-playwright/firefox-* /root/.cache/ms-playwright/webkit-* /tmp/*
 
 WORKDIR /home/uttaram
 COPY entrypoint.sh ./entrypoint.sh
